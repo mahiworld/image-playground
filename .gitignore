@@ -1,0 +1,39 @@
+# Virtual environment
+hi-venv/
+
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local development settings
+.env
+
+# IDE specific files
+.idea/
+
+# Dependency management
+pipfile.lock
+Pipfile
+
+# Compiled bytecode
+*.pyc
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Byte-compiled files (include Python 2 in case of using Python 3)
+*.pyc
+*.pyo
+__pycache__/
+
+# Pytest
+/.pytest_cache/
+
+# Docker
+Dockerfile
+docker-compose.yml

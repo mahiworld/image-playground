@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DALL-E Image Generation</title>
+    
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #imageContainer {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <h1>DALL-E Image Playground</h1>
+    
+    <form id="imageForm" enctype="multipart/form-data">
+        <label for="image">Upload Image:</label>
+        <input type="file" id="image" accept="image/png" required>
+        <br>
+        <button type="button" onclick="generateImageVariation()">Generate Image Variation</button>
+    </form>
+
+    <div id="imageContainer">
+        <!-- Display uploaded image -->
+        <h2>Uploaded Image</h2>
+        <img id="uploadedImage" alt="Uploaded Image">
+
+        <!-- Display generated image URLs -->
+        <h2>Generated Images</h2>
+        <div id="generatedImages"></div>
+    </div>
+
+    <script>
+        function generateImageVariation() {
+            // Get the input image file
+            var inputImage = document.getElementById('image').files[0];
+
+            // Display the uploaded image
+            var uploadedImageElement = document.getElementById('uploadedImage');
+            uploadedImageElement.src = URL.createObjectURL(inputImage);
+
+            // Create a FormData object to send the image to the server
+            var formData = new FormData();
+            formData.append('image', inputImage);
+
+            // Send the image to the server for generate-variation
+            fetch('/generate-variation', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display the generated images
+                var generatedImagesElement = document.getElementById('generatedImages');
+                generatedImagesElement.innerHTML = '';  // Clear previous results
+
+                if (data.success) {
+                    data.data.forEach(url => {
+                        var imageElement = document.createElement('img');
+                        imageElement.src = url;
+                        imageElement.style.maxWidth = '500px';
+                        generatedImagesElement.appendChild(imageElement);
+                    });
+                } else {
+                    // Display error message
+                    var errorMessage = document.createElement('p');
+                    errorMessage.textContent = data.error;
+                    generatedImagesElement.appendChild(errorMessage);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
