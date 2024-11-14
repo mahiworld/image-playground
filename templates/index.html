@@ -1,137 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DALL-E Image Generation</title>
-    
+    <title>DALL-E Image Playground</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            margin: 20px;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             text-align: center;
             color: #333;
+            margin-bottom: 20px;
         }
 
         form {
-            max-width: 500px;
-            margin: 20px auto;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         label {
-            display: block;
-            margin-bottom: 10px;
+            font-weight: bold;
         }
 
-        input[type="file"] {
-            display: block;
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
+        input,
+        textarea,
+        button {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            outline: none;
         }
 
         button {
-            background-color: #4caf50;
+            background-color: #007bff;
             color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: #0056b3;
         }
 
         #imageContainer {
-            max-width: 800px;
-            margin: 20px auto;
-        }
-
-        h2 {
-            color: #333;
             margin-top: 20px;
+            text-align: center;
         }
 
         img {
             max-width: 100%;
-            height: auto;
-            margin-bottom: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
         }
 
-        p {
-            color: #ff0000;
+        p.error {
+            color: #ff4d4d;
         }
     </style>
 </head>
+
 <body>
-    <h1>DALL-E Image Playground</h1>
-    
-    <form id="imageForm" enctype="multipart/form-data">
-        <label for="image">Upload Image:</label>
-        <input type="file" id="image" accept="image/png" required>
-        <br>
-        <button type="button" onclick="generateImageVariation()">Generate Image Variation</button>
-    </form>
+    <div class="container">
+        <h1>DALL-E Image Generator</h1>
 
-    <div id="imageContainer">
-        <!-- Display uploaded image -->
-        <h2>Uploaded Image</h2>
-        <img id="uploadedImage" alt="Uploaded Image">
+        <form id="promptForm">
+            <label for="prompt">Enter Prompt:</label>
+            <textarea id="prompt" rows="3" required></textarea>
+            <button type="button" onclick="generateImage()">Generate Image</button>
+        </form>
 
-        <!-- Display generated image URLs -->
-        <h2>Generated Images</h2>
-        <div id="generatedImages"></div>
+        <form id="variationForm" enctype="multipart/form-data" style="margin-top: 20px;">
+            <label for="variationImage">Upload Image for Variation:</label>
+            <input type="file" id="variationImage" accept="image/png">
+            <button type="button" onclick="generateVariation()">Generate Variation</button>
+        </form>
+
+        <div id="imageContainer"></div>
     </div>
 
     <script>
-        function generateImageVariation() {
-            // Get the input image file
-            var inputImage = document.getElementById('image').files[0];
+        function displayImages(urls) {
+            const container = document.getElementById('imageContainer');
+            container.innerHTML = '';
+            urls.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                container.appendChild(img);
+            });
+        }
 
-            // Display the uploaded image
-            var uploadedImageElement = document.getElementById('uploadedImage');
-            uploadedImageElement.src = URL.createObjectURL(inputImage);
+        function displayError(error) {
+            const container = document.getElementById('imageContainer');
+            container.innerHTML = `<p class="error">${error}</p>`;
+        }
 
-            // Create a FormData object to send the image to the server
-            var formData = new FormData();
-            formData.append('image', inputImage);
+        async function generateImage() {
+            const prompt = document.getElementById('prompt').value;
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+            const data = await response.json();
+            if (data.success) {
+                displayImages(data.data);
+            } else {
+                displayError(data.error);
+            }
+        }
 
-            // Send the image to the server for generate-variation
-            fetch('/generate-variation', {
+        async function generateVariation() {
+            const imageFile = document.getElementById('variationImage').files[0];
+            const formData = new FormData();
+            formData.append('image', imageFile);
+
+            const response = await fetch('/generate-variation', {
                 method: 'POST',
                 body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Display the generated images
-                var generatedImagesElement = document.getElementById('generatedImages');
-                generatedImagesElement.innerHTML = '';  // Clear previous results
-
-                if (data.success) {
-                    data.data.forEach(url => {
-                        var imageElement = document.createElement('img');
-                        imageElement.src = url;
-                        imageElement.style.maxWidth = '500px';
-                        generatedImagesElement.appendChild(imageElement);
-                    });
-                } else {
-                    // Display error message
-                    var errorMessage = document.createElement('p');
-                    errorMessage.textContent = data.error;
-                    generatedImagesElement.appendChild(errorMessage);
-                }
-            })
-            .catch(error => console.error('Error:', error));
+            });
+            const data = await response.json();
+            if (data.success) {
+                displayImages(data.data);
+            } else {
+                displayError(data.error);
+            }
         }
     </script>
 </body>
+
 </html>
